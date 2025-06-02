@@ -1,0 +1,205 @@
+# Circuit Shark 🦈
+
+**Empowering Your Network Analysis with AI-Driven Insights**
+
+Circuit Shark is an advanced network traffic analysis tool designed to leverage the power of Large Language Models (LLMs) and traditional packet analysis techniques. Developed with the mission of democratizing cybersecurity, it aims to provide transparent, affordable, and accessible insights into network behavior, helping users identify potential threats, misconfigurations, and noteworthy patterns. This tool is particularly focused on empowering security researchers, network administrators, and students by integrating cutting-edge AI with open-source packet analysis capabilities.
+
+Circuit Shark is a project by [Breaking Circuits, LLC](https://breakingcircuits.com) (replace with actual link if available), dedicated to fostering a diverse and inclusive cybersecurity workforce.
+
+## Core Technologies
+
+* **Python:** The primary programming language.
+* **Streamlit:** For the interactive web-based Graphical User Interface (GUI).
+* **tshark:** The command-line interface for Wireshark, used for packet capture and initial processing.
+* **Large Language Models (LLMs):**
+    * Google Gemini (via API)
+    * Mistral AI (via API)
+    * Groq (via API, typically Llama models)
+* **httpx:** For asynchronous HTTP requests to LLM APIs.
+* **SQLite:** For logging user actions, LLM analysis results, and PCAP session information.
+* **Pandas:** For data manipulation, particularly with field extraction results.
+* **Plotly Express:** For generating interactive charts in the dashboard.
+* **WeasyPrint (Optional):** For PDF report generation from HTML.
+* **AbuseIPDB API:** For live threat intelligence on IP addresses.
+
+## Key Features
+
+* **Multi-Source Packet Input:**
+    * Live packet capture on selected network interfaces.
+    * Processing of uploaded PCAP/PCAPNG files.
+* **BPF Filtering:** Apply Berkeley Packet Filters for both live capture and PCAP file processing to focus on relevant traffic.
+* **AI-Powered Analysis:**
+    * Leverage multiple LLMs (Gemini, Mistral, Groq) for human-readable translation of packet data.
+    * Natural Language Processing (NLP) interface to interpret user commands for setting filters, analysis focus, and triggering actions.
+    * LLM-driven identification of potential threats, vulnerabilities, and misconfigurations.
+* **Predefined Rules Engine:** A set of built-in rules to flag common suspicious activities (e.g., Telnet, FTP control, HTTP Basic Auth, connections to known suspicious ports).
+* **Live Threat Intelligence:**
+    * Automatic lookup of public IP addresses against AbuseIPDB to identify potentially malicious IPs.
+    * Caching of threat intelligence results to optimize API usage.
+* **Interactive Dashboard:**
+    * Visualizations of protocol distribution.
+    * Top Source and Destination IP addresses.
+* **Detailed Packet Exploration:**
+    * View summarized packet logs.
+    * Drill down into full JSON details for individual packets.
+* **Quick Field Extraction:**
+    * NLP can suggest relevant `tshark` fields based on user queries.
+    * Execute `tshark -T fields` commands to quickly extract and display specific data points in a tabular format.
+* **Comprehensive Reporting:**
+    * Generate downloadable reports in Markdown, HTML, and PDF (if WeasyPrint is installed).
+    * Reports include session information, alerts, LLM insights, and packet summaries.
+* **Data Logging & Auditing:**
+    * User actions, LLM analysis sessions, and saved PCAP information are logged to an SQLite database (`circuit_shark_audit.db`).
+    * Option to save processed PCAP files to a user-specified directory.
+* **Alerting System:**
+    * Alerts generated from LLM analysis, predefined rules, and threat intelligence.
+    * Severity-based prioritization and display (High, Medium, Low, Informational).
+    * Global alert overview in the sidebar.
+
+## Prerequisites
+
+1.  **Python:** Version 3.8 or higher is recommended.
+2.  **Wireshark (with `tshark`):** `tshark` (the command-line utility for Wireshark) must be installed and accessible in your system's PATH.
+    * On Linux: `sudo apt-get install tshark` (or equivalent for your distribution). You might need to configure permissions for non-root users to capture packets (e.g., `sudo dpkg-reconfigure wireshark-common`, then add your user to the `wireshark` group).
+    * On macOS: Install Wireshark from the official website; `tshark` will be included.
+    * On Windows: Install Wireshark from the official website; ensure the Wireshark installation directory (containing `tshark.exe`) is added to your system's PATH. Npcap (installed with Wireshark) is required for live capture.
+3.  **Git:** For cloning the repository.
+4.  **Web Browser:** For accessing the Streamlit application.
+5.  **(Optional for PDF Reports) WeasyPrint and its dependencies:**
+    * WeasyPrint depends on system libraries like Pango, Cairo, and GDK-PixBuf. Installation can be complex. Refer to the [WeasyPrint installation guide](https://doc.courtbouillon.org/weasyprint/stable/first_steps.html#installation) for your specific OS.
+    * A simple `pip install weasyprint` might work on some systems if dependencies are already met.
+
+## Installation
+
+1.  **Clone the Repository:**
+    ```bash
+    git clone [https://github.com/your-username/circuit-shark.git](https://github.com/your-username/circuit-shark.git) # Replace with actual repository URL
+    cd circuit-shark
+    ```
+
+2.  **Create and Activate a Virtual Environment (Recommended):**
+    ```bash
+    python -m venv venv
+    # On Windows
+    venv\Scripts\activate
+    # On macOS/Linux
+    source venv/bin/activate
+    ```
+
+3.  **Install Python Dependencies:**
+    The application uses several Python libraries. These are typically listed in a `requirements.txt` file.
+    ```bash
+    pip install streamlit pandas httpx plotly ipaddress
+    # If WeasyPrint is desired for PDF reports (and system dependencies are met):
+    # pip install weasyprint
+    ```
+    *Note: A `requirements.txt` file should ideally be created for the project by running `pip freeze > requirements.txt` after installing all necessary packages.*
+
+4.  **Set Up API Keys (Crucial):**
+    Circuit Shark requires API keys for LLM services and Threat Intelligence. These **must** be set as environment variables. **Do not hardcode them in the script.**
+
+    * **Google Gemini API Key:**
+        ```bash
+        export GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+        ```
+    * **Mistral AI API Key:**
+        ```bash
+        export MISTRAL_API_KEY="YOUR_MISTRAL_API_KEY"
+        ```
+    * **Groq API Key:**
+        ```bash
+        export GROQ_API_KEY="YOUR_GROQ_API_KEY"
+        ```
+    * **AbuseIPDB API Key:**
+        ```bash
+        export ABUSEIPDB_API_KEY="YOUR_ABUSEIPDB_API_KEY"
+        ```
+    *(On Windows, use `set VARIABLE_NAME="VALUE"` or `setx VARIABLE_NAME "VALUE"` in Command Prompt, or manage them through System Properties -> Environment Variables.)*
+
+    Refer to the respective API provider's documentation to obtain these keys.
+
+5.  **Verify `tshark` Installation:**
+    Open a terminal or command prompt and type:
+    ```bash
+    tshark --version
+    ```
+    This should display the `tshark` version information. If it's not found, ensure Wireshark is installed correctly and `tshark` is in your system's PATH.
+
+## How to Run Circuit Shark
+
+1.  Ensure your virtual environment is activated (if you created one).
+2.  Make sure all API keys are set as environment variables.
+3.  Navigate to the directory where `circuit_shark_app.py` (or your main application file) is located.
+4.  Run the Streamlit application:
+    ```bash
+    streamlit run circuit_shark_app.py
+    ```
+5.  Open your web browser and go to the local URL provided by Streamlit (usually `http://localhost:8501`).
+
+**Note on Permissions for Live Capture:**
+Live packet capture with `tshark` typically requires administrator or root privileges.
+* On Linux/macOS, you might need to run the Streamlit command with `sudo`:
+    ```bash
+    sudo streamlit run circuit_shark_app.py
+    ```
+    Alternatively, configure your system to allow non-root packet capture (see `tshark` installation notes).
+* On Windows, ensure Npcap is installed and Streamlit/Python has the necessary permissions. You might need to run your terminal as an administrator.
+
+## Configuration
+
+* **API Keys:** As mentioned, configure via environment variables.
+* **PCAP Save Directory:** Can be set within the application's sidebar. Defaults to the current working directory.
+* **Database:** The SQLite database (`circuit_shark_audit.db`) will be created in the same directory as the script by default.
+
+## Usage Overview
+
+1.  **Set API Keys:** Ensure all necessary API keys (Gemini, Mistral, Groq, AbuseIPDB) are set as environment variables before launching. The sidebar will indicate if keys are missing.
+2.  **Packet Source:**
+    * **Live Capture:** Enter the network interface name (e.g., `eth0`, `en0`, `Wi-Fi`), an optional BPF filter, and click "Start". Click "Stop" to finish capturing and process packets.
+    * **Upload PCAP:** Choose a PCAP/PCAPNG file, optionally enter a BPF filter to apply during processing, and click "Process PCAP File".
+3.  **Natural Language Command (Optional):**
+    * Type a command (e.g., "show me http traffic to evil.com", "save capture notes: test", "generate PDF report") into the NLP input.
+    * Click "Interpret & Execute Command". The LLM will suggest filters, analysis focus, or attempt to execute direct actions. Review and proceed.
+4.  **Quick Statistics (tshark -z):**
+    * After loading a PCAP or stopping a live capture, you can get quick summary statistics (protocol hierarchy, conversations, endpoints) by clicking "Get Quick Stats (tshark -z)" in the sidebar.
+5.  **Quick Field Extraction:**
+    * If NLP suggests specific `tshark` fields, or if you want to manually define them (future feature), you can run a quick field extraction to see specific data points in a table.
+6.  **LLM Analysis:**
+    * Select an LLM (Gemini, Mistral, Groq, or All).
+    * Choose an "Analysis Focus" (prompt template).
+    * Add any "Additional Query Details".
+    * Click "Analyze (LLM & Rules)". This will also run predefined rules.
+7.  **Review Results:**
+    * **Dashboard:** View protocol distribution and top IP charts.
+    * **Packet Log:** Browse packet summaries. Click on a packet to see its full JSON details and any associated Threat Intelligence.
+    * **LLM Analysis & Alerts:** Read LLM insights and review alerts generated by LLMs, predefined rules, and threat intelligence.
+8.  **Reporting:**
+    * Select a report format (Markdown, HTML, PDF).
+    * Click "Generate & Preview Report".
+    * Download the report using the "Download Report" button.
+9.  **Saving PCAPs:**
+    * Specify a "PCAP Save Directory" in the sidebar.
+    * Click "Save Current Session PCAP" to save the currently processed packet data.
+
+## Logging & Data
+
+* **SQLite Database (`circuit_shark_audit.db`):**
+    * `pcap_sessions`: Records details of PCAP files saved through the UI.
+    * `llm_analysis_log`: Logs prompts, full LLM responses, and generated alerts.
+    * `user_actions_log`: Logs significant user actions and system events.
+* **Saved PCAPs:** Stored in the directory specified by the user.
+* **Temporary Files:** Temporary PCAP files from live captures are created and should be processed/deleted or saved by the user.
+
+## Contributing
+
+(Placeholder for contribution guidelines if this becomes an open-source project. E.g., how to report bugs, suggest features, or submit pull requests.)
+We welcome contributions! Please see `CONTRIBUTING.md` for more details.
+
+## License
+
+(Placeholder for license information. E.g., MIT License, Apache 2.0, or specify if proprietary.)
+This project is licensed under the [MIT License](LICENSE.md) - see the LICENSE.md file for details.
+
+## Disclaimer
+
+Circuit Shark is a tool for network analysis and research. LLM outputs are generated by AI and may require expert verification. Always handle network data responsibly, ethically, and in accordance with applicable laws and policies. The developers are not responsible for misuse of this tool or misinterpretation of its output.
